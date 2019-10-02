@@ -1,0 +1,32 @@
+---
+# tasks file for mfitbs-disable-ipv6
+- name: Check if ipv6 was already disabled
+  command: grep -Fq "ipv6.disable=1" /etc/default/grub
+  register: ipv6disabled
+  check_mode: no
+  ignore_errors: yes
+  changed_when: no
+
+- name: Disable GRUB ipv6
+  replace:
+    path: /etc/default/grub
+    regexp: '(GRUB_CMDLINE_LINUX_DEFAULT=")(.*)'
+    replace: '\1ipv6.disable=1 \2'
+    validate: 'grep -Fq "GRUB_CMDLINE_LINUX_DEFAULT="  %s'
+  when: ipv6disabled.rc != 0
+
+- name: Update GRUB
+  command: update-grub
+  when: ipv6disabled.rc != 0
+
+- name: Disable ipv6 in /etc/sysctl.conf
+  command: echo -e "net.ipv6.conf.all.disable_ipv6 = 1\nnet.ipv6.conf.default.disable_ipv6 = 1\nnet.ipv6.conf.lo.disable_ipv6 = 1\n" >> /etc/sysctl.conf
+  when: ipv6disabled.rc != 0
+
+- name: Load ipv6 /etc/sysctl.conf changes
+  command: sysctl --load=/etc/sysctl.conf
+  when: ipv6disabled.rc != 0
+
+- name: Unconditionally reboot the machine with all defaults
+  reboot:
+  when: ipv6disabled.rc != 0
