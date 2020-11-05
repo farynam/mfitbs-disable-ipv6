@@ -24,7 +24,7 @@ Example Playbook
     - name: Install docker
       hosts: node1, node2, node3
       roles:
-      - role: mfitbs-disable-ipv6
+      - role: farynam.mfitbs_disable_ipv6
 
 License
 -------
